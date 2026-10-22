@@ -12,10 +12,7 @@ This started as an Applied Time Series Analysis course project. The brief had 11
 
 You need Python 3.11 or newer ([python.org/downloads](https://www.python.org/downloads/); on Windows, tick "Add python.exe to PATH" in the installer).
 
-1. Download the project: the green **Code** button on GitHub, then **Download ZIP**, and unzip it. Or clone it:
-   ```bash
-   git clone REPO_URL
-   ```
+1. Download the project: the green **Code** button on GitHub, then **Download ZIP**, and unzip it. If you use git, clone it with the URL from that same button instead.
 2. Start it.
    - **Windows:** double-click `run.bat`.
    - **macOS or Linux:** open a terminal in the folder and run `./run.sh`.
