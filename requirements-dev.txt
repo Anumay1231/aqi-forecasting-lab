@@ -1,0 +1,9 @@
+# Notebook, plots and tests (optional)
+-r requirements.txt
+matplotlib==3.10.7
+seaborn==0.13.2
+nbformat==5.10.4
+nbclient==0.11.0
+nbconvert==7.16.5
+ipykernel==6.29.5
+pytest==8.4.2

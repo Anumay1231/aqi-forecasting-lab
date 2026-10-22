@@ -1,0 +1,6 @@
+* text=auto
+*.bat text eol=crlf
+*.sh text eol=lf
+*.csv -diff
+*.json -diff linguist-generated
+*.ipynb linguist-generated

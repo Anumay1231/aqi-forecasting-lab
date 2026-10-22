@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AQI Forecasting Lab</title>
+  <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Classical time series analysis and forecasting of daily CPCB Air Quality Index for Indian cities.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23171717'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark" aria-hidden="true"><span></span></div>AQI Forecasting Lab <small>classical time series</small></div>
+    <div class="spacer"></div>
+    <label class="field-inline" for="city"><span>City</span>
+      <select id="city" aria-label="City"></select>
+    </label>
+    <button class="btn icon-btn" id="theme" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+      <span class="t-icon-swap" id="theme-icon" data-state="a" aria-hidden="true">
+        <span class="t-icon" data-icon="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>
+        <span class="t-icon" data-icon="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+      </span>
+    </button>
+  </header>
+  <nav class="mobnav" aria-label="Sections">
+    <a href="#forecast">Forecast</a>
+    <a href="#data">Data collection</a>
+    <a href="#eda">Exploratory analysis</a>
+    <a href="#missing">Missing values</a>
+    <a href="#stationarity">Stationarity</a>
+    <a href="#transform">Transformations</a>
+    <a href="#decomposition">Seasonality</a>
+    <a href="#acf">ACF and PACF</a>
+    <a href="#models">Model comparison</a>
+    <a href="#lags">Lag selection</a>
+    <a href="#aic">AIC and BIC</a>
+    <a href="#diagnostics">Diagnostics</a>
+    <a href="#limits">Limitations</a>
+  </nav>
+
+  <div class="shell">
+    <nav class="sidenav" aria-label="Sections">
+      <div class="group">
+        <h6>Workflow requirements</h6>
+        <a href="#data"><span class="num">01</span>Data collection</a>
+        <a href="#eda"><span class="num">02</span>Exploratory analysis</a>
+        <a href="#missing"><span class="num">03</span>Missing values</a>
+        <a href="#stationarity"><span class="num">04</span>Stationarity</a>
+        <a href="#transform"><span class="num">05</span>Transformations</a>
+        <a href="#decomposition"><span class="num">06</span>Seasonality</a>
+        <a href="#acf"><span class="num">07</span>ACF and PACF</a>
+        <a href="#models"><span class="num">08</span>Model comparison</a>
+        <a href="#lags"><span class="num">09</span>Lag selection</a>
+        <a href="#aic"><span class="num">10</span>AIC and BIC</a>
+        <a href="#forecast"><span class="num">11</span>Deployment</a>
+      </div>
+      <div class="group">
+        <h6>Evaluation</h6>
+        <a href="#diagnostics"><span class="num" aria-hidden="true">·</span>Residual diagnostics</a>
+        <a href="#limits"><span class="num" aria-hidden="true">·</span>Limitations</a>
+      </div>
+    </nav>
+
+    <main id="main">
+      <div id="loading" role="status" aria-live="polite"><span class="sr-only">Loading results…</span>
+        <div class="skeleton" style="height:40px;width:40%;margin:8px 0 16px"></div>
+        <div class="skeleton" style="height:420px"></div>
+      </div>
+      <div id="content" hidden></div>
+    </main>
+  </div>
+
+  <div class="toast-host" role="status" aria-live="polite">
+    <div class="t-toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span id="toast-text"></span></div>
+  </div>
+
+  <script src="/vendor/plotly.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
