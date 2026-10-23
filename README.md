@@ -8,6 +8,8 @@ This started as an Applied Time Series Analysis course project. The brief had 11
 
 > Forecasts here are statistical estimates for study. They are not official CPCB forecasts or health advice.
 
+A full guide to every chart and number, with the course requirement checklist, is in [docs/Project-Overview.pdf](docs/Project-Overview.pdf).
+
 ## Run it
 
 You need Python 3.11 or newer ([python.org/downloads](https://www.python.org/downloads/); on Windows, tick "Add python.exe to PATH" in the installer).
