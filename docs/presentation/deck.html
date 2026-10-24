@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AQI Forecasting Lab</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  :root {
+    --ink: #171717; --body: #4d4d4d; --mute: #8f8f8f; --line: #e5e5e5; --soft: #fafafa;
+    --accent: #0070f3; --accent-soft: #e6f0fe; --accent-ink: #0a4fb3; --ok: #1a7f37; --bad: #c50000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font: 400 17px/1.5 "Inter", sans-serif; color: var(--body); -webkit-print-color-adjust: exact; print-color-adjust: exact; font-variant-numeric: tabular-nums; }
+  .slide { width: 1280px; height: 720px; padding: 52px 64px 44px; position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; }
+  .slide:last-child { page-break-after: auto; }
+  .kicker { font: 600 13px/1 "Inter"; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  h1 { font: 700 34px/1.15 "Inter Display", "Inter"; color: var(--ink); letter-spacing: -.01em; }
+  h2 { font: 650 19px/1.3 "Inter"; color: var(--ink); margin-bottom: 8px; }
+  .sub { font-size: 18px; color: var(--body); margin-top: 8px; max-width: 980px; }
+  .content { flex: 1; display: flex; gap: 36px; margin-top: 26px; min-height: 0; }
+  .col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .w40 { flex: 0 0 40%; } .w35 { flex: 0 0 35%; } .w30 { flex: 0 0 30%; }
+  .fig { width: 100%; height: auto; display: block; }
+  .figbox { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  .figbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  ul { list-style: none; } ul li { position: relative; padding-left: 20px; margin-bottom: 9px; }
+  ul li::before { content: ""; position: absolute; left: 2px; top: 10px; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+  b, strong { color: var(--ink); font-weight: 600; }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 4px; color: var(--accent-ink); font-size: 15.5px; }
+  .note b { color: var(--accent-ink); }
+  .foot { position: absolute; left: 64px; right: 64px; bottom: 18px; display: flex; justify-content: space-between; font-size: 12px; color: var(--mute); }
+  .step { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; background: var(--ink); color: #fff; font: 600 14px "JetBrains Mono"; margin-right: 12px; vertical-align: 5px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th { text-align: left; font-weight: 600; color: var(--mute); font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  td.num, th.num { text-align: right; font-family: "JetBrains Mono"; font-size: 14px; }
+  tr.hl td { background: var(--accent-soft); }
+  .mono { font-family: "JetBrains Mono"; font-size: .9em; }
+  .ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .stat .v { font: 700 30px/1.1 "Inter Display"; color: var(--ink); }
+  .stat .l { font-size: 13.5px; color: var(--mute); margin-top: 4px; }
+  .card.col { display: block; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .shot { border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+  /* title slide */
+  .title { background: #0a0a0a; color: #b4b4b4; justify-content: space-between; }
+  .title h1 { color: #fff; font-size: 58px; line-height: 1.05; }
+  .title .kicker { color: #3291ff; }
+  .title .sub { color: #b4b4b4; font-size: 21px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { border: 1px solid #333; border-radius: 99px; padding: 6px 14px; font-size: 14px; color: #ddd; }
+  .grid11 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 34px; }
+  .g { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .g .n { font: 600 14px "JetBrains Mono"; color: var(--accent); width: 24px; }
+  .g .t { color: var(--ink); font-weight: 550; }
+  .g .d { color: var(--mute); font-size: 14.5px; margin-left: auto; text-align: right; }
+  .check td:first-child { font-family: "JetBrains Mono"; color: var(--accent); width: 34px; }
+  .tick { color: var(--ok); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- 1 Title -->
+<section class="slide title">
+  <div>
+    <div class="kicker">Applied Time Series Analysis · Course project</div>
+    <h1>AQI Forecasting Lab</h1>
+    <p class="sub" style="max-width:820px">Forecasting Mumbai's daily Air Quality Index with classical time series models, from raw CPCB bulletins to a deployed forecasting dashboard.</p>
+  </div>
+  <img src="shots/dashboard_dark.png" style="position:absolute; right:-120px; top:250px; width:820px; border-radius:12px; border:1px solid #262626; opacity:.95">
+  <div>
+    <div class="chips" style="max-width:520px; margin-bottom:22px">
+      <span class="chip">AR · MA · ARMA · ARIMA · SARIMA</span><span class="chip">ADF + KPSS</span><span class="chip">MSTL decomposition</span><span class="chip">AIC / BIC</span><span class="chip">FastAPI + Plotly</span>
+    </div>
+    <div style="font-size:15px">Mumbai (primary) and Delhi · CPCB data 2015–2025 · github.com/Anumay1231/aqi-forecasting-lab</div>
+  </div>
+</section>
+
+<!-- 2 Brief -->
+<section class="slide">
+  <div class="kicker">The brief</div>
+  <h1>Model deployment workflow: 11 required steps</h1>
+  <p class="sub">Every step below is implemented in the pipeline and shown with real numbers in the dashboard. The rest of this deck walks through them in order.</p>
+  <div class="content" style="display:block">
+    <div class="grid11">
+      <div class="g"><span class="n">01</span><span class="t">Data collection</span><span class="d">CPCB bulletins, 471k rows</span></div>
+      <div class="g"><span class="n">07</span><span class="t">ACF, PACF plots</span><span class="d">log AQI and Δ log AQI</span></div>
+      <div class="g"><span class="n">02</span><span class="t">Exploratory data analysis</span><span class="d">line, scatter, histogram, QQ, stats</span></div>
+      <div class="g"><span class="n">08</span><span class="t">Identify AR, MA, ARMA, ARIMA, SARIMA</span><span class="d">all five fitted</span></div>
+      <div class="g"><span class="n">03</span><span class="t">Dealing with missing values</span><span class="d">3 methods tested</span></div>
+      <div class="g"><span class="n">09</span><span class="t">Identify lags</span><span class="d">75 candidate orders</span></div>
+      <div class="g"><span class="n">04</span><span class="t">Check stationarity, ADF test</span><span class="d">ADF + KPSS, 5 series</span></div>
+      <div class="g"><span class="n">10</span><span class="t">AIC and BIC criteria</span><span class="d">per family + out-of-sample</span></div>
+      <div class="g"><span class="n">05</span><span class="t">Transformations if not stationary</span><span class="d">log, d = 1, D = 1</span></div>
+      <div class="g"><span class="n">11</span><span class="t">Deploy the model</span><span class="d">localhost dashboard + API</span></div>
+      <div class="g"><span class="n">06</span><span class="t">Seasonality, decomposition</span><span class="d">MSTL: weekly + annual</span></div>
+      <div class="g"><span class="n">+</span><span class="t">Evaluation (beyond the brief)</span><span class="d">2025 hold-out, residual tests</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>AQI Forecasting Lab</span><span>2</span></div>
+</section>
+
+<!-- 3 Choosing data -->
+<section class="slide">
+  <div class="kicker">Choosing the data</div>
+  <h1>From the suggested topics, we picked air pollution</h1>
+  <div class="content">
+    <div class="col w40">
+      <h2>Suggested data ideas</h2>
+      <table>
+        <tr><td>GDP</td><td style="color:var(--mute)">annual/quarterly, too few points</td></tr>
+        <tr><td>Population</td><td style="color:var(--mute)">smooth trend, little to model</td></tr>
+        <tr><td>Interest rate</td><td style="color:var(--mute)">policy steps, not stochastic</td></tr>
+        <tr><td>Currency</td><td style="color:var(--mute)">near random walk</td></tr>
+        <tr><td>Energy: crude oil, gas, electricity, solar</td><td style="color:var(--mute)">market-driven shocks</td></tr>
+        <tr><td>Bitcoin</td><td style="color:var(--mute)">random walk, regime changes</td></tr>
+        <tr class="hl"><td><b>Air pollution</b>, CO₂, temperature, rainfall</td><td><b>chosen</b></td></tr>
+        <tr><td>Sales forecasting</td><td style="color:var(--mute)">no open long series</td></tr>
+        <tr><td>Company financials, revenue, profit</td><td style="color:var(--mute)">quarterly, short</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <h2>Why daily AQI suits classical time series</h2>
+      <ul>
+        <li><b>Long and frequent:</b> one value per day for 10+ years, about 2,500 usable days per city.</li>
+        <li><b>Real structure to find:</b> strong persistence (lag-1 correlation 0.91), a weekly cycle and a large annual monsoon cycle.</li>
+        <li><b>All five model families make sense:</b> autoregression, shocks that fade, and seasonality.</li>
+        <li><b>Official and open:</b> published every day by the Central Pollution Control Board (CPCB).</li>
+        <li><b>Useful output:</b> a 1–7 day AQI forecast with health category is something people act on.</li>
+      </ul>
+      <div class="note" style="margin-top:auto"><b>Cities.</b> Mumbai is the primary city. Delhi is run through the same pipeline as a contrast: much higher pollution and a stronger seasonal pattern.</div>
+    </div>
+  </div>
+  <div class="foot"><span>AQI Forecasting Lab</span><span>3</span></div>
+</section>
+
+<!-- 4 Step 1 -->
+<section class="slide">
+  <div class="kicker">Step 01</div>
+  <h1><span class="step">01</span>Data collection</h1>
+  <p class="sub">CPCB National AQI daily bulletins, parsed into one CSV by UrbanEmissions.info (GitHub: urbanemissionsinfo/AQI_bulletins, GPL-3.0).</p>
+  <div class="content" style="flex-direction:column; gap:22px">
+    <div class="stats">
+      <div class="stat"><div class="v">471,015</div><div class="l">rows, all cities</div></div>
+      <div class="stat"><div class="v">297</div><div class="l">cities covered</div></div>
+      <div class="stat"><div class="v">2015–2025</div><div class="l">1 May 2015 to 31 Dec 2025</div></div>
+      <div class="stat"><div class="v">3,614</div><div class="l">Mumbai days with a bulletin (of 3,787)</div></div>
+    </div>
+    <div style="display:flex; gap:36px">
+      <div class="col">
+        <h2>What one row holds</h2>
+        <ul>
+          <li>Date, city, city AQI (0–500, average of all stations), number of stations, prominent pollutant, air quality category.</li>
+          <li>No duplicate city-date rows and no zero AQI values in Mumbai's series.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h2>Why modelling starts in 2019</h2>
+        <ul>
+          <li>Until 2018 Mumbai had <b>one station</b>, so the "city" AQI was a single site. In 2019 it rose to 7, and to 24 by 2024.</li>
+          <li>Using 2019–2025 keeps the series comparable and drops 168 of the 173 missing days.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Source: cpcb.nic.in/AQI_Bulletin.php</span><span>4</span></div>
+</section>
+
+<!-- 5 Step 2 line -->
+<section class="slide">
+  <div class="kicker">Step 02 · Exploratory data analysis</div>
+  <h1><span class="step">02</span>Line graph: ten years of Mumbai AQI</h1>
+  <div class="content" style="flex-direction:column; gap:16px">
+    <img class="fig" src="fig/line.png">
+    <div style="display:flex; gap:36px">
+      <ul class="col"><li>Clear <b>annual cycle</b>: poor air every winter, clean air every monsoon.</li><li>No long-run upward or downward trend after 2019.</li></ul>
+      <ul class="col"><li>Day-to-day swings are large in winter and small in the monsoon: variance rises with the level.</li><li>That points to a <b>log transform</b> (step 05).</li></ul>
+    </div>
+  </div>
+  <div class="foot"><span>Grey band: single-station years, excluded from modelling</span><span>5</span></div>
+</section>
+
+<!-- 6 Step 2 scatter hist qq -->
+<section class="slide">
+  <div class="kicker">Step 02 · Exploratory data analysis</div>
+  <h1>Scatter plot, histogram and QQ plot</h1>
+  <div class="content" style="flex-direction:column; gap:18px">
+    <img class="fig" src="fig/eda.png">
+    <div style="display:flex; gap:28px">
+      <div class="col card"><h2>Scatter (lag 1)</h2>Today's AQI predicts tomorrow's closely: r = <b>0.914</b>. At lag 7 r = 0.755 and at lag 365 r = 0.648. Autoregressive models should work.</div>
+      <div class="col card"><h2>Histogram</h2>Right-skewed (skewness <b>0.832</b>): many clean days, a long tail of bad ones. After log, skewness falls to <b>0.012</b>.</div>
+      <div class="col card"><h2>QQ plot</h2>Raw AQI bends away from the normal line at both ends. Log AQI follows it much more closely.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Mumbai, 2019–2025 (2,557 days)</span><span>6</span></div>
+</section>
+
+<!-- 7 Step 2 stats -->
+<section class="slide">
+  <div class="kicker">Step 02 · Exploratory data analysis</div>
+  <h1>Descriptive statistics and the seasonal profile</h1>
+  <div class="content">
+    <div class="col w35">
+      <table>
+        <tr><th>Statistic</th><th class="num">Mumbai AQI</th></tr>
+        <tr><td>Days</td><td class="num">2,557</td></tr>
+        <tr><td>Mean</td><td class="num">104.2</td></tr>
+        <tr><td>Std deviation</td><td class="num">54.9</td></tr>
+        <tr><td>Minimum</td><td class="num">25</td></tr>
+        <tr><td>25th percentile</td><td class="num">59</td></tr>
+        <tr><td>Median</td><td class="num">89</td></tr>
+        <tr><td>75th percentile</td><td class="num">141</td></tr>
+        <tr><td>Maximum</td><td class="num">381</td></tr>
+        <tr><td>Skewness (raw / log)</td><td class="num">0.832 / 0.012</td></tr>
+        <tr><td>Excess kurtosis</td><td class="num">0.007</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <img class="fig" src="fig/monthly.png" style="max-height:330px; object-fit:contain">
+      <ul style="margin-top:14px">
+        <li>January averages <b>168</b> (Moderate); August <b>52</b> (Satisfactory), three times cleaner.</li>
+        <li>Kruskal-Wallis across months: p ≈ 0, a real seasonal effect. Across weekdays: p = 0.99, no meaningful weekly effect in the means.</li>
+        
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>AQI categories: 0–50 Good, 51–100 Satisfactory, 101–200 Moderate, 201–300 Poor</span><span>7</span></div>
+</section>
+
+<!-- 8 Step 3 -->
+<section class="slide">
+  <div class="kicker">Step 03</div>
+  <h1><span class="step">03</span>Dealing with missing values</h1>
+  <div class="content">
+    <div class="col">
+      <img class="fig" src="fig/missing.png">
+      <div class="stats" style="grid-template-columns:repeat(3,1fr); margin-top:18px">
+        <div class="stat"><div class="v">173</div><div class="l">missing days, full history (4.57%)</div></div>
+        <div class="stat"><div class="v">5</div><div class="l">missing in 2019–2025 (0.20%)</div></div>
+        <div class="stat"><div class="v">2 days</div><div class="l">longest gap in the window</div></div>
+      </div>
+    </div>
+    <div class="col w35">
+      <h2>How we filled them</h2>
+      <ul>
+        <li>Rebuilt a full daily calendar so gaps are explicit.</li>
+        <li>Tested three fill methods by <b>hiding 299 known values</b> and measuring the error.</li>
+        <li><b>Time interpolation won</b> (MAE 14.1 vs 19.3 forward fill, 29.1 same weekday last week).</li>
+        <li>After filling: 0 missing values.</li>
+      </ul>
+      <div class="note" style="margin-top:auto">Missing dates in the window: 28 Feb, 1 Mar and 2 Apr 2019, 21 Sep 2023, 1 Jan 2025.</div>
+    </div>
+  </div>
+  <div class="foot"><span>AQI Forecasting Lab</span><span>8</span></div>
+</section>
+
+<!-- 9 Step 4 -->
+<section class="slide">
+  <div class="kicker">Step 04</div>
+  <h1><span class="step">04</span>Check stationarity: ADF and KPSS tests</h1>
+  <p class="sub">ADF: H₀ = unit root (non-stationary). KPSS: H₀ = stationary. Using both guards against either test's blind spots.</p>
+  <div class="content" style="flex-direction:column; gap:14px; margin-top:18px">
+    <div style="display:flex; gap:32px">
+      <table style="flex:1.3; font-size:14px">
+        <tr><th>Series</th><th class="num">ADF stat</th><th class="num">ADF p</th><th class="num">KPSS stat</th><th class="num">KPSS p</th><th>Verdict</th></tr>
+        <tr><td>AQI</td><td class="num">−3.64</td><td class="num">0.005</td><td class="num">0.218</td><td class="num">≥ 0.10</td><td class="ok">stationary</td></tr>
+        <tr class="hl"><td>log AQI</td><td class="num">−3.46</td><td class="num">0.009</td><td class="num">0.283</td><td class="num">≥ 0.10</td><td class="ok">stationary</td></tr>
+        <tr><td>Δ log AQI (d = 1)</td><td class="num">−20.27</td><td class="num">&lt;0.001</td><td class="num">0.060</td><td class="num">≥ 0.10</td><td class="ok">stationary</td></tr>
+        <tr><td>Δ₇ log AQI (D = 1, s = 7)</td><td class="num">−10.16</td><td class="num">&lt;0.001</td><td class="num">0.067</td><td class="num">≥ 0.10</td><td class="ok">stationary</td></tr>
+        <tr><td>Δ Δ₇ log AQI</td><td class="num">−15.62</td><td class="num">&lt;0.001</td><td class="num">0.011</td><td class="num">≥ 0.10</td><td class="ok">stationary</td></tr>
+      </table>
+      <div class="note" style="flex:1; align-self:flex-start"><b>Result.</b> The level series is already stationary at 5% on both tests: it returns to a seasonal mean and has no trend. So ARMA-type models (d = 0) are valid; d = 1 is still tried in ARIMA for comparison.<br><br>Rolling std of <b>raw</b> AQI tracks its mean (r = 0.81); for <b>log</b> AQI that link drops to 0.29.</div>
+    </div>
+    <img class="fig" src="fig/rolling.png" style="max-height:225px; object-fit:contain">
+  </div>
+  <div class="foot"><span>Training window 2019–2023</span><span>9</span></div>
+</section>
+
+<!-- 10 Step 5 -->
+<section class="slide">
+  <div class="kicker">Step 05</div>
+  <h1><span class="step">05</span>Transformations</h1>
+  <div class="content">
+    <div class="col">
+      <h2>1 · Log transform (variance)</h2>
+      <ul>
+        <li>Box-Cox estimated <b>λ = 0.03</b>, effectively 0, so we use the simpler <span class="mono">log(AQI)</span>.</li>
+        <li>Mean–std correlation: <b>0.81 → 0.29</b>. Skewness: <b>0.83 → 0.01</b>.</li>
+        <li>Forecasts come back with <span class="mono">exp()</span> (the median AQI); interval ends are transformed the same way and capped at 500.</li>
+      </ul>
+      <h2 style="margin-top:18px">2 · Differencing (mean)</h2>
+      <ul>
+        <li>First difference <span class="mono">d = 1</span> and weekly seasonal difference <span class="mono">D = 1, s = 7</span> were tested in step 04.</li>
+        <li>Not required for stationarity, but used inside the ARIMA and SARIMA candidates so the comparison is fair.</li>
+      </ul>
+    </div>
+    <div class="col w40">
+      <h2>Effect of the log transform</h2>
+      <table>
+        <tr><th>Measure</th><th class="num">Raw AQI</th><th class="num">log AQI</th></tr>
+        <tr><td>Skewness</td><td class="num">0.832</td><td class="num">0.012</td></tr>
+        <tr><td>Mean–std correlation</td><td class="num">0.813</td><td class="num">0.290</td></tr>
+        <tr><td>QQ plot vs normal</td><td class="num">bent tails</td><td class="num">near line</td></tr>
+        <tr><td>Box-Cox λ</td><td class="num" colspan="2">0.03 (≈ log)</td></tr>
+      </table>
+      <div class="note" style="margin-top:16px"><b>All models are fitted to log AQI.</b> This also keeps forecasts positive and makes the intervals wider on high-pollution days, which matches the data.</div>
+    </div>
+  </div>
+  <div class="foot"><span>AQI Forecasting Lab</span><span>10</span></div>
+</section>
+
+<!-- 11 Step 6 -->
+<section class="slide">
+  <div class="kicker">Step 06</div>
+  <h1><span class="step">06</span>Seasonality and seasonal decomposition</h1>
+  <div class="content">
+    <div class="col" style="flex:1.5"><img class="fig" src="fig/decomp.png"></div>
+    <div class="col w30">
+      <p style="margin-bottom:12px">MSTL splits log AQI into trend, a <b>weekly</b> (7-day) and an <b>annual</b> (365-day) seasonal part, and a residual.</p>
+      <table>
+        <tr><th>Component</th><th class="num">Strength</th></tr>
+        <tr class="hl"><td>Annual seasonality</td><td class="num">0.777</td></tr>
+        <tr><td>Trend</td><td class="num">0.183</td></tr>
+        <tr><td>Weekly seasonality</td><td class="num">0.045</td></tr>
+      </table>
+      <ul style="margin-top:16px; font-size:15.5px">
+        <li>The annual cycle dominates (monsoon washout vs winter inversion).</li>
+        <li>Weekly seasonality is weak, so SARIMA with s = 7 adds little.</li>
+        <li>A 365-day SARIMA is impractical; the annual cycle is modelled with <b>Fourier terms</b> instead.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Strength = 1 − Var(resid) / Var(component + resid); 0 none, 1 strong</span><span>11</span></div>
+</section>
+
+<!-- 12 Step 7 -->
+<section class="slide">
+  <div class="kicker">Step 07</div>
+  <h1><span class="step">07</span>ACF and PACF plots</h1>
+  <div class="content">
+    <div class="col" style="flex:1.6"><img class="fig" src="fig/acf.png"></div>
+    <div class="col w30">
+      <h2>Reading the plots</h2>
+      <ul style="font-size:15.5px">
+        <li><b>ACF of log AQI</b> decays slowly: all 40 lags significant, a sign of strong persistence and the annual cycle.</li>
+        <li><b>PACF of log AQI</b> cuts off after a few lags: significant at 1, 3–6, 8–10 (and 23). This is an <b>AR signature</b>, pointing to p ≈ 10.</li>
+        <li>After differencing, the ACF has a sharp spike at lag 1 and only 5 significant lags, which suggests an MA part with q ≈ 1–3.</li>
+      </ul>
+      <div class="note" style="margin-top:auto">Shaded band: 95% limits ±0.046 (n = 1,826).</div>
+    </div>
+  </div>
+  <div class="foot"><span>Training data 2019–2023</span><span>12</span></div>
+</section>
+
+<!-- 13 Step 8 -->
+<section class="slide">
+  <div class="kicker">Step 08</div>
+  <h1><span class="step">08</span>Identify the model: AR, MA, ARMA, ARIMA, SARIMA</h1>
+  <p class="sub">All five families from the brief were fitted, plus three reference models, so the choice is made on evidence.</p>
+  <div class="content" style="display:block">
+    <table>
+      <tr><th>Family</th><th>What it assumes</th><th>What ACF/PACF said</th><th>Best order</th></tr>
+      <tr><td><b>AR(p)</b></td><td>today depends on the last p days</td><td>PACF cuts off, ACF decays: strong fit</td><td class="mono">AR(10)</td></tr>
+      <tr><td><b>MA(q)</b></td><td>today depends on the last q shocks</td><td>ACF does not cut off: poor fit</td><td class="mono">MA(10)</td></tr>
+      <tr><td><b>ARMA(p,q)</b></td><td>both</td><td>mixed decay in both plots</td><td class="mono">ARMA(3,3)</td></tr>
+      <tr><td><b>ARIMA(p,d,q)</b></td><td>ARMA on the differenced series</td><td>Δ ACF spikes at lag 1</td><td class="mono">ARIMA(2,1,3)</td></tr>
+      <tr><td><b>SARIMA</b></td><td>adds a weekly (s = 7) seasonal part</td><td>weak weekly peaks</td><td class="mono">SARIMA(3,0,3)(0,0,1)[7]</td></tr>
+      <tr class="hl"><td><b>SARIMAX + Fourier</b></td><td>AR errors + sine/cosine annual cycle</td><td>strong annual seasonality (0.78)</td><td class="mono">(3,0,0) + K = 2</td></tr>
+      <tr><td style="color:var(--mute)">Baselines</td><td colspan="3" style="color:var(--mute)">Naive (tomorrow = today), seasonal naive (same weekday last week), Holt-Winters exponential smoothing</td></tr>
+    </table>
+    <div class="note" style="margin-top:18px"><b>Identification:</b> the PACF cut-off plus slow ACF decay pointed to an AR model; the decomposition pointed to an annual seasonal term. Both were then confirmed by AIC/BIC and by forecast accuracy.</div>
+  </div>
+  <div class="foot"><span>Fitted with statsmodels SARIMAX / ETSModel</span><span>13</span></div>
+</section>
+
+<!-- 14 Step 9 -->
+<section class="slide">
+  <div class="kicker">Step 09</div>
+  <h1><span class="step">09</span>Identify lags</h1>
+  <div class="content">
+    <div class="col">
+      <h2>A systematic search over 75 candidate orders</h2>
+      <table>
+        <tr><th>Family</th><th>Orders tried</th><th class="num">Fits</th></tr>
+        <tr><td>AR</td><td class="mono">p = 1 … 14</td><td class="num">14</td></tr>
+        <tr><td>MA</td><td class="mono">q = 1 … 10</td><td class="num">10</td></tr>
+        <tr><td>ARMA</td><td class="mono">p, q ∈ {1,2,3}</td><td class="num">9</td></tr>
+        <tr><td>ARIMA</td><td class="mono">d = 1, p ∈ 0…2, q ∈ 0…3</td><td class="num">15</td></tr>
+        <tr><td>SARIMA</td><td class="mono">(P,D,Q)[7] variants</td><td class="num">7</td></tr>
+        <tr><td>SARIMAX + Fourier</td><td class="mono">p ∈ 1…5, K ∈ 1…4</td><td class="num">20</td></tr>
+        <tr><td><b>Total</b></td><td></td><td class="num"><b>75</b></td></tr>
+      </table>
+    </div>
+    <div class="col w40">
+      <h2>How the lags were chosen</h2>
+      <ul>
+        <li><b>Start from the plots:</b> PACF lags 1–10 significant, so the AR search covers up to 14.</li>
+        <li><b>Rank by AIC</b> within each family (step 10).</li>
+        <li><b>Confirm on unseen data:</b> rolling 1, 3 and 7-day forecasts over 2024.</li>
+        <li><b>Check residuals:</b> Ljung-Box at lags 7, 14 and 28.</li>
+      </ul>
+      <div class="note" style="margin-top:auto"><b>Selected lags:</b> AR(10) uses the last 10 days. For Delhi the same search picked SARIMAX with K = 4 Fourier pairs.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Fitted on 2019–2023; nothing from 2024–2025 used in fitting</span><span>14</span></div>
+</section>
+
+<!-- 15 Step 10 -->
+<section class="slide">
+  <div class="kicker">Step 10</div>
+  <h1><span class="step">10</span>AIC and BIC criteria</h1>
+  <div class="content">
+    <div class="col" style="gap:16px">
+      <img class="fig" src="fig/aicbic.png" style="max-height:370px; object-fit:contain">
+      <div style="display:flex; gap:24px; font-size:15px">
+        <div class="col card"><b>SARIMAX + Fourier</b> has the lowest AIC (−996.8) and BIC (−947.2): the annual cycle explains real variance.</div>
+        <div class="col card"><b>MA(10)</b> is far behind (AIC −639). AR, ARMA, ARIMA and SARIMA sit within 30 AIC points of each other.</div>
+        <div class="col card" style="background:var(--accent-soft); border-color:var(--accent-soft); color:var(--accent-ink)">AIC is not comparable across different d, so the final pick uses <b style="color:var(--accent-ink)">2024 forecast RMSE</b>: AR(10) was lowest (18.46 at 1 day).</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>AIC = 2k − 2 ln L · BIC = k ln n − 2 ln L</span><span>15</span></div>
+</section>
+
+<!-- 16 Evaluation -->
+<section class="slide">
+  <div class="kicker">Evaluation · 2025 hold-out</div>
+  <h1>How accurate is it on a year no model has seen?</h1>
+  <p class="sub">Split: train 2019–2023, validate 2024, test 2025 once. Every 2025 day gets a rolling forecast using only data up to the day before.</p>
+  <div class="content">
+    <div class="col" style="flex:1.5"><img class="fig" src="fig/rmse.png"></div>
+    <div class="col w30">
+      <table style="font-size:14px">
+        <tr><th>Model</th><th class="num">RMSE 1d</th><th class="num">RMSE 7d</th></tr>
+        <tr><td>Naive</td><td class="num">15.53</td><td class="num">29.71</td></tr>
+        <tr class="hl"><td>AR(10)</td><td class="num">15.15</td><td class="num">27.58</td></tr>
+        <tr><td>ARMA(3,3)</td><td class="num">15.17</td><td class="num">27.38</td></tr>
+        <tr><td>ARIMA(2,1,3)</td><td class="num">15.27</td><td class="num">27.99</td></tr>
+        <tr><td>SARIMA</td><td class="num">15.18</td><td class="num">27.42</td></tr>
+        <tr><td>SARIMAX+F</td><td class="num">14.80</td><td class="num">26.64</td></tr>
+        <tr><td>MA(10)</td><td class="num">15.64</td><td class="num">34.19</td></tr>
+      </table>
+      <p style="font-size:14.5px; margin-top:12px">AR(10), 1-day: MAE <b>10.3</b>, MASE 0.65, correct AQI category <b>83.6%</b> of days, 95% interval covers <b>97.3%</b>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mumbai · 365 forecasts per horizon</span><span>16</span></div>
+</section>
+
+<!-- 17 Actual vs predicted -->
+<section class="slide">
+  <div class="kicker">Evaluation · 2025 hold-out</div>
+  <h1>Actual vs predicted, and is the gain real?</h1>
+  <div class="content" style="flex-direction:column; gap:16px">
+    <img class="fig" src="fig/actual_pred.png" style="max-height:325px; object-fit:contain">
+    <div style="display:flex; gap:28px">
+      <div class="col card"><h2>Tracks the season</h2>Forecasts follow the winter rise and monsoon fall, and the 95% band contains 97% of actual days.</div>
+      <div class="col card"><h2>Diebold-Mariano test vs naive</h2>Mumbai: classical models are 2–10% better than naive, but <b>no p-value below 0.05</b> over one test year. Sudden weather-driven jumps dominate.</div>
+      <div class="col card"><h2>Delhi is different</h2>SARIMAX + Fourier beats naive at every horizon with <b>p &lt; 0.0001</b> (next slides).</div>
+    </div>
+  </div>
+  <div class="foot"><span>AR(10), 1-day-ahead rolling forecasts, Jan–Dec 2025</span><span>17</span></div>
+</section>
+
+<!-- 18 Residuals -->
+<section class="slide">
+  <div class="kicker">Evaluation · residual diagnostics</div>
+  <h1>Residual diagnostics: is anything left to model?</h1>
+  <div class="content" style="flex-direction:column; gap:16px">
+    <img class="fig" src="fig/resid.png">
+    <table style="font-size:14.5px">
+      <tr><th>Model</th><th class="num">Ljung-Box p, lag 7</th><th class="num">lag 14</th><th class="num">lag 28</th><th>Autocorrelation left?</th><th>Jarque-Bera</th></tr>
+      <tr class="hl"><td>AR(10)</td><td class="num">0.36</td><td class="num">0.48</td><td class="num">0.80</td><td class="ok">no: white noise</td><td>heavy tails (kurtosis 1.25)</td></tr>
+      <tr><td>ARIMA(2,1,3)</td><td class="num">0.18</td><td class="num">0.63</td><td class="num">0.92</td><td class="ok">no</td><td>heavy tails</td></tr>
+      <tr><td>MA(10)</td><td class="num">&lt;0.001</td><td class="num">&lt;0.001</td><td class="num">&lt;0.001</td><td class="bad">yes: underfit</td><td>heavy tails</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>Residuals on the log scale, 2019–2024</span><span>18</span></div>
+</section>
+
+<!-- 19 Delhi -->
+<section class="slide">
+  <div class="kicker">Second city</div>
+  <h1>Delhi: the same pipeline, a much stronger result</h1>
+  <div class="content">
+    <div class="col"><img class="fig" src="fig/cities.png"></div>
+    <div class="col"><img class="fig" src="fig/delhi.png"></div>
+    <div class="col w30">
+      <ul style="font-size:15.5px">
+        <li>Delhi averages <b>207</b> AQI (Mumbai 104) with a sharp, regular winter peak.</li>
+        <li>Annual Fourier terms (K = 4) cut 7-day RMSE from <b>65.1 to 46.2</b>, a 29% gain.</li>
+        <li>Diebold-Mariano vs naive: p &lt; 0.0001 at 1, 3 and 7 days.</li>
+        <li>Lesson: the stronger and more regular the seasonality, the more classical models add.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Delhi modelled from 2018; test year 2025</span><span>19</span></div>
+</section>
+
+<!-- 20 Step 11 -->
+<section class="slide">
+  <div class="kicker">Step 11</div>
+  <h1><span class="step">11</span>Deploy the model</h1>
+  <div class="content">
+    <div class="col" style="flex:1.7"><img class="shot fig" src="shots/dashboard.png"></div>
+    <div class="col w30">
+      <ul style="font-size:15.5px">
+        <li><b>Live forecasts:</b> pick city, any of 9 models, horizon 1–30 days.</li>
+        <li>80% and 95% prediction bands, AQI category colouring.</li>
+        <li>Forecast table and <b>CSV download</b>.</li>
+        <li>Every workflow step (01–10) has its own page section with the real charts and tests.</li>
+        <li>Light and dark themes; works on a phone.</li>
+      </ul>
+      <div class="note" style="margin-top:auto">Next forecast: <b>1 Jan 2026 → AQI 124</b> (95% range 87–177), Moderate.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Screenshot of the running app at localhost:8000</span><span>20</span></div>
+</section>
+
+<!-- 21 Architecture -->
+<section class="slide">
+  <div class="kicker">Step 11 · How it is built</div>
+  <h1>Architecture and how to run it</h1>
+  <div class="content">
+    <div class="col">
+      <h2>Pipeline → artifacts → API → dashboard</h2>
+      <table style="font-size:14.5px">
+        <tr><td class="mono">run_pipeline.py</td><td>runs steps 01–10 and fits all models for each city</td></tr>
+        <tr><td class="mono">src/</td><td>data loading, analysis, models, evaluation</td></tr>
+        <tr><td class="mono">artifacts/*.json</td><td>results and fitted parameters (no retraining on launch)</td></tr>
+        <tr><td class="mono">app/server.py</td><td>FastAPI: <span class="mono">/api/forecast</span>, <span class="mono">/api/forecast.csv</span>, <span class="mono">/api/city</span></td></tr>
+        <tr><td class="mono">app/static/</td><td>HTML + CSS + JavaScript + Plotly charts</td></tr>
+        <tr><td class="mono">tests/</td><td>no data leakage, chronological splits, valid forecasts</td></tr>
+        <tr><td class="mono">notebooks/</td><td>the full analysis as a Jupyter notebook</td></tr>
+      </table>
+      <p style="font-size:14.5px; margin-top:12px">Forecasts are computed on request from the saved model parameters; nothing is hard-coded. Each request takes well under a second.</p>
+    </div>
+    <div class="col w35">
+      <h2>Run it</h2>
+      <div class="card" style="font-family:'JetBrains Mono'; font-size:14px; line-height:1.8; background:var(--soft)">
+        Windows: double-click <b>run.bat</b><br>macOS/Linux: <b>./run.sh</b><br>→ opens http://localhost:8000
+      </div>
+      <p style="margin-top:14px; font-size:15px">First launch creates a private Python environment and installs 7 packages (1–2 min). Python 3.11+ is the only requirement.</p>
+      <img class="shot fig" src="shots/dashboard_dark.png" style="margin-top:auto">
+    </div>
+  </div>
+  <div class="foot"><span>Stack: Python · pandas · statsmodels · FastAPI · Plotly</span><span>21</span></div>
+</section>
+
+<!-- 22 Findings -->
+<section class="slide">
+  <div class="kicker">Conclusion</div>
+  <h1>Findings, limitations and next steps</h1>
+  <div class="content">
+    <div class="col">
+      <h2>Findings</h2>
+      <ul>
+        <li>Mumbai AQI is stationary around a strong <b>annual cycle</b>, with heavy day-to-day persistence.</li>
+        <li><b>AR(10) on log AQI</b> is the selected model: best validation RMSE and white-noise residuals.</li>
+        <li>Adding annual <b>Fourier terms</b> gives the best AIC and the best long-horizon accuracy.</li>
+        <li>For Delhi the gain over naive is large and significant; for Mumbai it is small.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>Limitations</h2>
+      <ul>
+        <li>Only past AQI is used; weather (rain, wind) drives Mumbai's sudden swings.</li>
+        <li>Residuals have heavy tails, so extreme days are under-predicted.</li>
+        <li>One test year limits statistical power.</li>
+      </ul>
+      <h2 style="margin-top:18px">Next steps</h2>
+      <ul>
+        <li>Add rainfall and wind as exogenous variables (SARIMAX).</li>
+        <li>Extend to more cities from the same 297-city dataset.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Forecasts are statistical estimates for study, not official CPCB forecasts</span><span>22</span></div>
+</section>
+
+<!-- 23 Checklist -->
+<section class="slide">
+  <div class="kicker">Summary</div>
+  <h1>Requirement checklist</h1>
+  <div class="content" style="display:block">
+    <table class="check" style="font-size:15.5px">
+      <tr><th>#</th><th>Requirement</th><th>Where it is done</th><th></th></tr>
+      <tr><td>01</td><td>Data collection</td><td>CPCB bulletins, 471,015 rows; Mumbai 2019–2025</td><td class="tick">✓</td></tr>
+      <tr><td>02</td><td>EDA: line, scatter, histogram, QQ, descriptive stats</td><td>slides 5–7, dashboard section 02</td><td class="tick">✓</td></tr>
+      <tr><td>03</td><td>Missing values</td><td>5 days filled by time interpolation, chosen by test</td><td class="tick">✓</td></tr>
+      <tr><td>04</td><td>Stationarity, ADF test</td><td>ADF + KPSS on 5 series; level series stationary</td><td class="tick">✓</td></tr>
+      <tr><td>05</td><td>Transformations</td><td>log (Box-Cox λ = 0.03), d = 1, D = 1 tested</td><td class="tick">✓</td></tr>
+      <tr><td>06</td><td>Seasonality, decomposition</td><td>MSTL: annual strength 0.78, weekly 0.05</td><td class="tick">✓</td></tr>
+      <tr><td>07</td><td>ACF, PACF plots</td><td>log AQI and Δ log AQI, 40 lags</td><td class="tick">✓</td></tr>
+      <tr><td>08</td><td>AR, MA, ARMA, ARIMA, SARIMA</td><td>all five fitted, plus SARIMAX-Fourier and 3 baselines</td><td class="tick">✓</td></tr>
+      <tr><td>09</td><td>Identify lags</td><td>75 candidate orders; AR(10) selected</td><td class="tick">✓</td></tr>
+      <tr><td>10</td><td>AIC and BIC</td><td>per family, confirmed on 2024 and 2025 data</td><td class="tick">✓</td></tr>
+      <tr><td>11</td><td>Deploy the model</td><td>FastAPI + Plotly dashboard on localhost, one-click launch</td><td class="tick">✓</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>github.com/Anumay1231/aqi-forecasting-lab</span><span>23</span></div>
+</section>
+
+</body>
+</html>

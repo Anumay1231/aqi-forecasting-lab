@@ -114,10 +114,10 @@ date_axis(axs[-1]); save(fig, "decomp")
 
 # 6. Monthly profile
 mo = M["eda"]["seasonal"]["month"]
-fig, ax = plt.subplots(figsize=(6, 3.4))
+fig, ax = plt.subplots(figsize=(7, 3.2))
 lab = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
 vals = [m["mean"] for m in mo]
-ax.bar(lab, vals, color=[ACCENT if v >= 100 else ACCENT_SOFT for v in vals])
+ax.bar(range(12), vals, color=[ACCENT if v >= 100 else ACCENT_SOFT for v in vals]); ax.set_xticks(range(12), lab)
 ax.axhline(100, color=MUTE, lw=0.8, ls="--"); ax.text(11.4, 103, "100", color=MUTE, fontsize=9, ha="right")
 ax.set_title("Mean AQI by month, 2019–2025"); ax.grid(axis="x", visible=False)
 save(fig, "monthly")
@@ -147,15 +147,15 @@ for c in M["candidates"]:
 fams = list(best)
 amin, bmin = min(best[f]["aic"] for f in fams), min(best[f]["bic"] for f in fams)
 labels = [best[f]["label"].replace(" + Fourier", "\n+ Fourier") for f in fams]
-fig, ax = plt.subplots(figsize=(11, 3.5))
+fig, ax = plt.subplots(figsize=(11, 3.3))
 yy = np.arange(len(fams))[::-1]; h = 0.38
 da = [best[f]["aic"] - amin for f in fams]; db = [best[f]["bic"] - bmin for f in fams]
 ax.barh(yy + h / 2, da, h, color=ACCENT, label="ΔAIC")
 ax.barh(yy - h / 2, db, h, color=GREY, label="ΔBIC")
 for y0, a, b, f in zip(yy, da, db, fams):
-    ax.text(a + 4, y0 + h / 2, f"{a:.0f}  (AIC {best[f]['aic']:.0f})", va="center", fontsize=8.5, color=BODY)
-    ax.text(b + 4, y0 - h / 2, f"{b:.0f}  (BIC {best[f]['bic']:.0f})", va="center", fontsize=8.5, color=MUTE)
-ax.set_yticks(yy, labels, fontsize=9.5); ax.set_xlim(0, 420); ax.grid(axis="y", visible=False)
+    ax.text(a + 4, y0 + h / 2, f"{a:.0f}  (AIC {best[f]['aic']:.0f})", va="center", fontsize=9.5, color=BODY)
+    ax.text(b + 4, y0 - h / 2, f"{b:.0f}  (BIC {best[f]['bic']:.0f})", va="center", fontsize=9.5, color=MUTE)
+ax.set_yticks(yy, labels, fontsize=10.5); ax.set_xlim(0, 480); ax.grid(axis="y", visible=False)
 ax.set_xlabel("gap to the best model (0 = best; lower is better)"); ax.legend(loc="center right")
 ax.set_title("Best order in each family, fitted on 2019–2023 (log AQI)")
 save(fig, "aicbic")
